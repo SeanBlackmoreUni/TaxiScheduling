@@ -1,4 +1,12 @@
-"""This file creates constraints, each """
+"""
+Constaint File
+
+This file holds all the constraints for the Taxi Scheduling Problem.
+"""
+
+from gurobipy import quicksum, Model
+
+
 class Constraints:
     def __init__(self, model: Model, variables: dict):
         """
@@ -14,6 +22,7 @@ class Constraints:
     def add_constraints(self):
         raise NotImplementedError("Subclasses should implement this method.")
     
+
 class Domain(Constraints):
     def add_constraints(self):
         # Equation (1): Z_{iju} is binary
@@ -95,6 +104,7 @@ class Domain(Constraints):
                             name=f"Z_logic_2_{i}_{j}_{u}"
                         )    
 
+
 class Sequencing(Constraints):
     def add_constraints(self):
         # Constraints (9) and (10): Sequencing consistency
@@ -121,8 +131,8 @@ class Sequencing(Constraints):
                             name=f"sequencing_lower_{i}_{j}_{u}"
                         )
 
+
 class Overtaking(Constraints):
-    class Overtaking(Constraints):
     def add_constraints(self):
         # Constraints (11) and (12): No overtaking on the same edge
         for i in self.variables['aircraft']:
@@ -173,6 +183,7 @@ class Overtaking(Constraints):
                                 name=f"headon_lower_{i}_{j}_{u}_{v}"
                             )
 
+
 class Release(Constraints):
     def add_constraints(self):
         # Equation (15): Arrival aircraft must not start earlier than their estimated touchdown time
@@ -188,6 +199,7 @@ class Release(Constraints):
                 self.variables['t'][i, self.variables['origin'][i]] >= self.variables['PBT'][i],
                 name=f"release_departure_{i}"
             )
+
 
 class Speed(Constraints):
     def add_constraints(self):
@@ -207,10 +219,12 @@ class Speed(Constraints):
                     name=f"speed_linear_min_{i}_{u}_{v}"
                 )
 
+
 class Separation(Constraints):
     def add_constraints(self):
         # Example separation constraint
         self.model.addConstr(self.variables['x'] + self.variables['y'] >= 8, name="separation")
+
 
 class RunwayOccupancy(Constraints):
     def add_constraints(self):

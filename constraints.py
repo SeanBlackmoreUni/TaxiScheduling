@@ -222,9 +222,36 @@ class Speed(Constraints):
 
 class Separation(Constraints):
     def add_constraints(self):
-        # Example separation constraint
-        self.model.addConstr(self.variables['x'] + self.variables['y'] >= 8, name="separation")
+        # Constraints (23) and (24): Spatial separation between aircraft
+        for i in self.variables['aircraft']:
+            for j in self.variables['aircraft']:
+                if i != j:
+                    for (u, v) in self.variables['edges']:
+                        # Equation (23): Ensure aircraft i and j do not collide on edge (u, v)
+                        self.model.addConstr(
+                            self.variables['t'][j, u] - self.variables['t'][i, v]
+                            >= self.variables['Sep'] - self.variables['M'] * (
+                                1 - quicksum(
+                                    self.variables['Gamma'][i, r] * self.variables['Gamma'][j, r]
+                                    for r in self.variables['routes']
+                                    if (u, v) in self.variables['edges'][r]
+                                )
+                            ),
+                            name=f"separation_{i}_{j}_{u}_{v}"
+                        )
 
+                        # Equation (24): Ensure aircraft j and i do not collide on edge (v, u)
+                        self.model.addConstr(
+                            self.variables['t'][i, u] - self.variables['t'][j, v]
+                            >= self.variables['Sep'] - self.variables['M'] * (
+                                1 - quicksum(
+                                    self.variables['Gamma'][i, r] * self.variables['Gamma'][j, r]
+                                    for r in self.variables['routes']
+                                    if (v, u) in self.variables['edges'][r]
+                                )
+                            ),
+                            name=f"separation_reverse_{i}_{j}_{u}_{v}"
+                        )
 
 class RunwayOccupancy(Constraints):
     def add_constraints(self):
@@ -242,22 +269,25 @@ class RunwayOccupancy(Constraints):
                         self.model.addConstr(
                             self.variables['t'][j, l] + self.variables['T'][l, j, i] 
                             <= self.variables['t'][i, l] + self.variables['M'] * self.variables['rho'][i, j],
-                            name=f"runway_occupancy_lower_{i}_{j}_{l}"
-
-
-
-
-
-
-
-
-
-
-
-
+                            name=f"runway_occupancy_lower_{i}_{j}_{l}")
 
 
 class Capacity(Constraints):
     def add_constraints(self):
-        # Example capacity constraint for runway crossing queue
-        self.model.addConstr(self.variables['x'] <= 10, name="capacity")
+        """
+        Adds capacity constraints for runway crossing queues.
+        Equation (33): Ensure aircraft at exit edges do not exceed prescribed capacity.
+        """
+        # Loop through each pair of aircraft and each runway exit edge
+        for i in self.variables['aircraft']:
+            for j in self.variables['aircraft']:
+                if i != j:  # Avoid self-comparison
+                    for l in self.variables['exit_edges']:
+                        # Equation (33)
+                        self.model.addConstr(
+                            self.variables['t'][i, l] <= self.variables['T_l'][i, j, l],
+                            name=f"capacity_{i}_{j}_{l}"
+                        )
+
+
+

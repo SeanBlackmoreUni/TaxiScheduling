@@ -15,7 +15,7 @@ class BaseScenario:
     def __init__(self, name):
         self.name = name
 
-    def get_parameters(self, model):
+    def get_parameters(self):
         """
         Returns the parameters for the scenario. To be overridden by subclasses.
         """
@@ -32,8 +32,8 @@ class Scenario1(BaseScenario):
     """ 
     Class for scenario 1. This scenario is fictional and serves 
     """
-    def __init__(self):
-        super().__init__("Scenario1")
+    def __init__(self, name):
+        super().__init__(name)
     
     def get_parameters(self):
         """ Gets the parameters. """

@@ -89,7 +89,6 @@ class Scenario1(BaseScenario):
             "graph_data": graph_data,
             "route_data": route_data
         }
-   
 
     
 def get_scenario(name):

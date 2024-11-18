@@ -35,7 +35,7 @@ class TaxiSchedulingModel():
         # Decision Variables
         decision_variables = {
             # Binary variable Z_{iju} indicating sequencing of aircraft i and j at node u
-            "Z": model.addVars(
+            "Z": self.model.addVars(
                 [(i, j, u) for i in aircraft_data["aircraft"]
                         for j in aircraft_data["aircraft"]
                         if i != j
@@ -44,14 +44,14 @@ class TaxiSchedulingModel():
             ),
 
             # Binary variable Gamma_{ir} indicating if aircraft i selects route r
-            "Gamma": model.addVars(
+            "Gamma": self.model.addVars(
                 [(i, r) for i in aircraft_data["aircraft"]
                         for r in range(len(route_data["routes"][i]))],
                 vtype=GRB.BINARY, name="Gamma"
             ),
 
             # Binary variable rho_{ij} indicating sequencing between aircraft i and j on runways
-            "rho": model.addVars(
+            "rho": self.model.addVars(
                 [(i, j) for i in aircraft_data["aircraft"]
                         for j in aircraft_data["aircraft"]
                         if i != j],
@@ -59,7 +59,7 @@ class TaxiSchedulingModel():
             ),
 
             # Continuous variable t_{iu} indicating time aircraft i arrives at node u
-            "t": model.addVars(
+            "t": self.model.addVars(
                 [(i, u) for i in aircraft_data["aircraft"]
                         for u in graph_data["nodes"]],
                 vtype=GRB.CONTINUOUS, name="t"
@@ -70,15 +70,17 @@ class TaxiSchedulingModel():
 
 
     def constraints_setup(self):
-        """ Sets up the constraints for the model. """
+        """ 
+        Sets up the constraints for the model. 
+        """
         constraint_classes = [
             Domain,
             Sequencing,
-            # Overtaking,
-            # Release,
-            # Speed,
-            # Separation,
-            # RunwayOccupancy
+            Overtaking,
+            Release,
+            Speed,
+            Separation,
+            RunwayOccupancy
         ]
 
         for constraint_class in constraint_classes:
@@ -87,14 +89,34 @@ class TaxiSchedulingModel():
 
 
     def optimize_model(self):
-        """ Optimizes the model in the two steps specified by the report. """
+        """ 
+        Optimizes the model in the two steps specified by the report. 
+        """
         # We will first solve for Objective function 2).
-        S = model.addVar(vtype=GRB.CONTINUOUS, name="S")
+        S = self.model.addVar(vtype=GRB.CONTINUOUS, name="S")
+        for i in self.variables['departures']:
+            self.model.addConstr(self.variables["t"][i, "destination"[i]] <= S, name=f"departure_time_bound_{i}")
+        
+        # Set objective and optimize
+        self.model.setObjective(S, GRB.MINIMIZE)
+        self.model.optimize()
 
 
     def visualize_results(self):
-        """ Visualizes the results of the optimization. """
-        pass
+        """ 
+        Visualizes the results of the optimization. 
+        """
+        if self.model.Status == GRB.OPTIMAL:
+            print("Optimization was successful!")
+        elif self.model.Status == GRB.INFEASIBLE:
+            print("Model is infeasible.")
+        elif self.model.Status == GRB.UNBOUNDED:
+            print("Model is unbounded.")
+        else:
+            print(f"Optimization ended with status {self.model.Status}")
+        
+        print(f"####   The model finished with objective value: {self.model.ObjVal}")
+
 
 
 if __name__ == "__main__":

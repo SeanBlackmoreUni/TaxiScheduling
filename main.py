@@ -46,7 +46,7 @@ class TaxiSchedulingModel():
             # Binary variable Gamma_{ir} indicating if aircraft i selects route r
             "Gamma": self.model.addVars(
                 [(i, r) for i in aircraft_data["aircraft"]
-                        for r in range(len(route_data["routes"][i]))],
+                        for r in range(len((route_data["routes"][i])))],
                 vtype=GRB.BINARY, name="Gamma"
             ),
 

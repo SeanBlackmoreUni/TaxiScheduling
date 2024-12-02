@@ -41,7 +41,7 @@ class Domain(Constraints):
 
         # Equation (2): Gamma_{ir} is binary
         for i in self.variables['aircraft']:
-            for r in self.variables['routes']:
+            for r in self.variables['routes'][i]:
                 self.model.addConstr(
                     self.variables['Gamma'][i, r] >= 0,
                     name=f"Gamma_binary_lower_{i}_{r}"
@@ -75,7 +75,7 @@ class Domain(Constraints):
         # Equation (6): Each aircraft selects one route
         for i in self.variables['aircraft']:
             self.model.addConstr(
-                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes']) == 1,
+                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i]) == 1,
                 name=f"route_selection_{i}"
             )
 
@@ -87,7 +87,7 @@ class Domain(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] <= quicksum(
                                 self.variables['Gamma'][i, r]
-                                for r in self.variables['routes'] if u in self.variables['routes'][r]
+                                for r in self.variables['routes'][i] if u in self.variables['routes'][i][r]
                             ),
                             name=f"Z_logic_1_{i}_{j}_{u}"
                         )
@@ -100,7 +100,7 @@ class Domain(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] <= quicksum(
                                 self.variables['Gamma'][j, r]
-                                for r in self.variables['routes'] if u in self.variables['routes'][r]
+                                for r in self.variables['routes'][j] if u in self.variables['routes'][j][r]
                             ),
                             name=f"Z_logic_2_{i}_{j}_{u}"
                         )    
@@ -117,8 +117,8 @@ class Sequencing(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] + self.variables['Z'][j, i, u] 
                             <= 3 - (
-                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'] if u in self.variables['routes'][r]) +
-                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'] if u in self.variables['routes'][r])
+                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i] if u in self.variables['routes'][i][r]) +
+                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'][j] if u in self.variables['routes'][j][r])
                             ),
                             name=f"sequencing_upper_{i}_{j}_{u}"
                         )
@@ -126,8 +126,8 @@ class Sequencing(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] + self.variables['Z'][j, i, u] 
                             >= 2 * (
-                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'] if u in self.variables['routes'][r]) +
-                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'] if u in self.variables['routes'][r])
+                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i] if u in self.variables['routes'][i][r]) +
+                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'][j] if u in self.variables['routes'][j][r])
                             ) - 3,
                             name=f"sequencing_lower_{i}_{j}_{u}"
                         )
@@ -144,8 +144,8 @@ class Overtaking(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] - self.variables['Z'][i, j, v] 
                             <= 2 - (
-                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'] if (u, v) in self.variables['edges'][r]) +
-                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'] if (u, v) in self.variables['edges'][r])
+                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i] if (u, v) in self.variables['edges'][r]) +
+                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'][j] if (u, v) in self.variables['edges'][r])
                             ),
                             name=f"overtaking_upper_{i}_{j}_{u}_{v}"
                         )
@@ -153,8 +153,8 @@ class Overtaking(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] - self.variables['Z'][i, j, v] 
                             >= (
-                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'] if (u, v) in self.variables['edges'][r]) +
-                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'] if (u, v) in self.variables['edges'][r])
+                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i] if (u, v) in self.variables['edges'][r]) +
+                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'][j] if (u, v) in self.variables['edges'][r])
                             ) - 2,
                             name=f"overtaking_lower_{i}_{j}_{u}_{v}"
                         )

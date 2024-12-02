@@ -29,14 +29,15 @@ class Domain(Constraints):
         for i in self.variables['aircraft']:
             for j in self.variables['aircraft']:
                 for u in self.variables['nodes']:
-                    self.model.addConstr(
-                        self.variables['Z'][i, j, u] >= 0,
-                        name=f"Z_binary_lower_{i}_{j}_{u}"
-                    )
-                    self.model.addConstr(
-                        self.variables['Z'][i, j, u] <= 1,
-                        name=f"Z_binary_upper_{i}_{j}_{u}"
-                    )
+                    if i != j:
+                        self.model.addConstr(
+                            self.variables['Z'][i, j, u] >= 0,
+                            name=f"Z_binary_lower_{i}_{j}_{u}"
+                        )
+                        self.model.addConstr(
+                            self.variables['Z'][i, j, u] <= 1,
+                            name=f"Z_binary_upper_{i}_{j}_{u}"
+                        )
 
         # Equation (2): Gamma_{ir} is binary
         for i in self.variables['aircraft']:

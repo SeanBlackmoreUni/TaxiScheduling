@@ -92,13 +92,19 @@ class TaxiSchedulingModel():
         """ 
         Optimizes the model in the two steps specified by the report. 
         """
-        # We will first solve for Objective function 2).
-        S = self.model.addVar(vtype=GRB.CONTINUOUS, name="S")
-        for i in self.variables['departures']:
-            self.model.addConstr(self.variables["t"][i, "destination"[i]] <= S, name=f"departure_time_bound_{i}")
+        # We will first solve objective function 1).
+        self.model.setObjective(
+            quicksum(self.variables["t"][i, self.variables["destination"][i]] for i in self.variables["aircraft"]),
+            GRB.MINIMIZE
+        )
+
+        # # Now solve for Objective function 2).
+        # S = self.model.addVar(vtype=GRB.CONTINUOUS, name="S")
+        # for i in self.variables['departures']:
+        #     self.model.addConstr(self.variables["t"][i, "destination"[i]] <= S, name=f"departure_time_bound_{i}")
         
         # Set objective and optimize
-        self.model.setObjective(S, GRB.MINIMIZE)
+        # self.model.setObjective(S, GRB.MINIMIZE)
         self.model.optimize()
 
 

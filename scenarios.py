@@ -50,15 +50,37 @@ class Scenario1(BaseScenario):
             "Vi_j": {(1, 2): 30, (2, 1): 30},   # Minimum time separation (Vij) between aircraft i and j
         }
 
+        # graph_data = {
+        #     "nodes": [1, 2, 3, 4, 5],                                           # Nodes in the airport graph
+        #     "edges": [(1, 2), (2, 3), (3, 4), (4, 5)],                          # Directed edges in the airport graph
+        #     "length": {(1, 2): 100, (2, 3): 150, (3, 4): 200, (4, 5): 250},     # Length of each edge (luv)
+        #     "Smax": {(1, 2): 15, (2, 3): 15, (3, 4): 15, (4, 5): 15},           # Maximum velocity (Smax) for each edge
+        #     "Smin": {(1, 2): 5, (2, 3): 5, (3, 4): 5, (4, 5): 5},               # Minimum velocity (Smin) for each edge
+        #     "runway_edges": [(4, 5)],                                           # Runway edges
+        #     "Sep": 5,                                                           # Minimum spatial separation (Sep) on taxiways
+        # 
+
         graph_data = {
-            "nodes": [1, 2, 3, 4, 5],                                           # Nodes in the airport graph
-            "edges": [(1, 2), (2, 3), (3, 4), (4, 5)],                          # Directed edges in the airport graph
-            "length": {(1, 2): 100, (2, 3): 150, (3, 4): 200, (4, 5): 250},     # Length of each edge (luv)
-            "Smax": {(1, 2): 15, (2, 3): 15, (3, 4): 15, (4, 5): 15},           # Maximum velocity (Smax) for each edge
-            "Smin": {(1, 2): 5, (2, 3): 5, (3, 4): 5, (4, 5): 5},               # Minimum velocity (Smin) for each edge
-            "runway_edges": [(4, 5)],                                           # Runway edges
-            "Sep": 5,                                                           # Minimum spatial separation (Sep) on taxiways
+            "nodes": [1, 2, 3, 4, 5],                                                       # Nodes in the airport graph
+            "edges": [
+                (1, 2), (2, 3), (3, 4), (4, 5), (1, 4), (4, 3), (3, 5), (3, 2), (2, 5)      # Edges from route_data
+            ],
+            "length": {
+                (1, 2): 100, (2, 3): 150, (3, 4): 200, (4, 5): 250,             
+                (1, 4): 180, (4, 3): 140, (3, 5): 220, (3, 2): 130, (2, 5): 210             # Lengths
+            },
+            "Smax": {
+                (1, 2): 15, (2, 3): 15, (3, 4): 15, (4, 5): 15,                       
+                (1, 4): 15, (4, 3): 15, (3, 5): 15, (3, 2): 15, (2, 5): 15                  # Max speeds
+            },
+            "Smin": {
+                (1, 2): 5, (2, 3): 5, (3, 4): 5, (4, 5): 5,                     
+                (1, 4): 5, (4, 3): 5, (3, 5): 5, (3, 2): 5, (2, 5): 5                       # Additional min speeds
+            },
+            "runway_edges": [(4, 5)],                                                       # Runway edges remain unchanged
+            "Sep": 5,                                                                       # Minimum spatial separation
         }
+
 
         route_data = {
             # All routes for each aircraft (R_i)

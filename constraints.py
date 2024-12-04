@@ -41,7 +41,7 @@ class Domain(Constraints):
 
         # Equation (2): Gamma_{ir} is binary
         for i in self.variables['aircraft']:
-            for r in self.variables['routes'][i]:
+            for r in range(len(self.variables['routes'][i])):
                 self.model.addConstr(
                     self.variables['Gamma'][i, r] >= 0,
                     name=f"Gamma_binary_lower_{i}_{r}"
@@ -75,7 +75,7 @@ class Domain(Constraints):
         # Equation (6): Each aircraft selects one route
         for i in self.variables['aircraft']:
             self.model.addConstr(
-                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i]) == 1,
+                quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i]))) == 1,
                 name=f"route_selection_{i}"
             )
 
@@ -87,7 +87,7 @@ class Domain(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] <= quicksum(
                                 self.variables['Gamma'][i, r]
-                                for r in self.variables['routes'][i] if u in self.variables['routes'][i][r]
+                                for r in range(len(self.variables['routes'][i])) if u in self.variables['routes'][i][r]["nodes"]
                             ),
                             name=f"Z_logic_1_{i}_{j}_{u}"
                         )
@@ -100,7 +100,7 @@ class Domain(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] <= quicksum(
                                 self.variables['Gamma'][j, r]
-                                for r in self.variables['routes'][j] if u in self.variables['routes'][j][r]
+                                for r in range(len(self.variables['routes'][j])) if u in self.variables['routes'][j][r]["nodes"]
                             ),
                             name=f"Z_logic_2_{i}_{j}_{u}"
                         )    
@@ -117,8 +117,8 @@ class Sequencing(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] + self.variables['Z'][j, i, u] 
                             <= 3 - (
-                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i] if u in self.variables['routes'][i][r]) +
-                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'][j] if u in self.variables['routes'][j][r])
+                                quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i])) if u in self.variables['routes'][i][r]["nodes"]) +
+                                quicksum(self.variables['Gamma'][j, r] for r in range(len(self.variables['routes'][j])) if u in self.variables['routes'][j][r]["nodes"])
                             ),
                             name=f"sequencing_upper_{i}_{j}_{u}"
                         )
@@ -126,8 +126,8 @@ class Sequencing(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] + self.variables['Z'][j, i, u] 
                             >= 2 * (
-                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i] if u in self.variables['routes'][i][r]) +
-                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'][j] if u in self.variables['routes'][j][r])
+                                quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i])) if u in self.variables['routes'][i][r]["nodes"]) +
+                                quicksum(self.variables['Gamma'][j, r] for r in range(len(self.variables['routes'][j])) if u in self.variables['routes'][j][r]["nodes"])
                             ) - 3,
                             name=f"sequencing_lower_{i}_{j}_{u}"
                         )
@@ -144,8 +144,8 @@ class Overtaking(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] - self.variables['Z'][i, j, v] 
                             <= 2 - (
-                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i] if (u, v) in self.variables['edges'][r]) +
-                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'][j] if (u, v) in self.variables['edges'][r])
+                                quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i])) if (u, v) in self.variables['routes'][i][r]["edges"]) +
+                                quicksum(self.variables['Gamma'][j, r] for r in range(len(self.variables['routes'][j])) if (u, v) in self.variables['routes'][j][r]["edges"])
                             ),
                             name=f"overtaking_upper_{i}_{j}_{u}_{v}"
                         )
@@ -153,8 +153,8 @@ class Overtaking(Constraints):
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] - self.variables['Z'][i, j, v] 
                             >= (
-                                quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'][i] if (u, v) in self.variables['edges'][r]) +
-                                quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'][j] if (u, v) in self.variables['edges'][r])
+                                quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i])) if (u, v) in self.variables['routes'][i][r]["edges"]) +
+                                quicksum(self.variables['Gamma'][j, r] for r in range(len(self.variables['routes'][j])) if (u, v) in self.variables['routes'][j][r]["edges"])
                             ) - 2,
                             name=f"overtaking_lower_{i}_{j}_{u}_{v}"
                         )
@@ -169,8 +169,8 @@ class Overtaking(Constraints):
                             self.model.addConstr(
                                 self.variables['Z'][i, j, u] - self.variables['Z'][j, i, v] 
                                 <= 2 - (
-                                    quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'] if (u, v) in self.variables['edges'][r]) +
-                                    quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'] if (v, u) in self.variables['edges'][r])
+                                    quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i])) if (u, v) in self.variables['routes'][i][r]["edges"]) +
+                                    quicksum(self.variables['Gamma'][j, r] for r in range(len(self.variables['routes'][j])) if (v, u) in self.variables['routes'][j][r]["edges"])
                                 ),
                                 name=f"headon_upper_{i}_{j}_{u}_{v}"
                             )
@@ -178,8 +178,8 @@ class Overtaking(Constraints):
                             self.model.addConstr(
                                 self.variables['Z'][i, j, u] + self.variables['Z'][j, i, v] 
                                 >= (
-                                    quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'] if (u, v) in self.variables['edges'][r]) +
-                                    quicksum(self.variables['Gamma'][j, r] for r in self.variables['routes'] if (v, u) in self.variables['edges'][r])
+                                    quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i])) if (u, v) in self.variables['routes'][i][r]["edges"]) +
+                                    quicksum(self.variables['Gamma'][j, r] for r in range(len(self.variables['routes'][j])) if (v, u) in self.variables['routes'][j][r]["edges"])
                                 ) - 2,
                                 name=f"headon_lower_{i}_{j}_{u}_{v}"
                             )
@@ -210,16 +210,49 @@ class Speed(Constraints):
                 self.model.addConstr(
                     (self.variables['t'][i, v] - self.variables['t'][i, u]) 
                     <= self.variables['length'][u, v] / self.variables['Smax'][u, v] 
-                    + self.variables['M'] * (1 - quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'] if (u, v) in self.variables['edges'][r])),
+                    + self.variables['M'] * (1 - quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i])) if (u, v) in self.variables['routes'][i][r]["edges"])),
                     name=f"speed_linear_max_{i}_{u}_{v}"
                 )
                 self.model.addConstr(
                     (self.variables['t'][i, v] - self.variables['t'][i, u]) 
                     >= self.variables['length'][u, v] / self.variables['Smin'][u, v] 
-                    - self.variables['M'] * (1 - quicksum(self.variables['Gamma'][i, r] for r in self.variables['routes'] if (u, v) in self.variables['edges'][r])),
+                    - self.variables['M'] * (1 - quicksum(self.variables['Gamma'][i, r] for r in range(len(self.variables['routes'][i])) if (u, v) in self.variables['routes'][i][r]["edges"])),
                     name=f"speed_linear_min_{i}_{u}_{v}"
                 )
 
+
+# class Separation(Constraints):
+#     def add_constraints(self):
+#         # Constraints (23) and (24): Spatial separation between aircraft
+#         for i in self.variables['aircraft']:
+#             for j in self.variables['aircraft']:
+#                 if i != j:
+#                     for (u, v) in self.variables['edges']:
+#                         # Equation (23): Ensure aircraft i and j do not collide on edge (u, v)
+#                         self.model.addConstr(
+#                             self.variables['t'][j, u] - self.variables['t'][i, v]
+#                             >= self.variables['Sep'] - self.variables['M'] * (
+#                                 1 - quicksum(
+#                                     self.variables['Gamma'][i, r] * self.variables['Gamma'][j, r]
+#                                     for r in self.variables['routes']
+#                                     if (u, v) in self.variables['edges'][r]
+#                                 )
+#                             ),
+#                             name=f"separation_{i}_{j}_{u}_{v}"
+#                         )
+
+#                         # Equation (24): Ensure aircraft j and i do not collide on edge (v, u)
+#                         self.model.addConstr(
+#                             self.variables['t'][i, u] - self.variables['t'][j, v]
+#                             >= self.variables['Sep'] - self.variables['M'] * (
+#                                 1 - quicksum(
+#                                     self.variables['Gamma'][i, r] * self.variables['Gamma'][j, r]
+#                                     for r in self.variables['routes']
+#                                     if (v, u) in self.variables['edges'][r]
+#                                 )
+#                             ),
+#                             name=f"separation_reverse_{i}_{j}_{u}_{v}"
+#                         )
 
 class Separation(Constraints):
     def add_constraints(self):
@@ -227,32 +260,49 @@ class Separation(Constraints):
         for i in self.variables['aircraft']:
             for j in self.variables['aircraft']:
                 if i != j:
-                    for (u, v) in self.variables['edges']:
-                        # Equation (23): Ensure aircraft i and j do not collide on edge (u, v)
-                        self.model.addConstr(
-                            self.variables['t'][j, u] - self.variables['t'][i, v]
-                            >= self.variables['Sep'] - self.variables['M'] * (
-                                1 - quicksum(
-                                    self.variables['Gamma'][i, r] * self.variables['Gamma'][j, r]
-                                    for r in self.variables['routes']
-                                    if (u, v) in self.variables['edges'][r]
+                    for r in range(len(self.variables['routes'][i])):
+                        for (u, v) in self.variables['routes'][i][r]["edges"]:
+                            # Equation (23): Ensure aircraft i and j do not collide on edge (u, v)
+                            self.model.addConstr(
+                                self.variables['t'][j, u] - self.variables['t'][i, u]
+                                - (self.variables['Sep'] / self.variables['length'][u, v]) * (self.variables['t'][i, v] - self.variables['t'][i, u])
+                                >= -3 + self.variables['Z'][i, j, u]
+                                + quicksum(
+                                    self.variables['Gamma'][i, r]
+                                    for r in range(len(self.variables['routes'][i]))
+                                    if (u, v) in self.variables['routes'][i][r]["edges"]
                                 )
-                            ),
-                            name=f"separation_{i}_{j}_{u}_{v}"
-                        )
+                                + quicksum(
+                                    self.variables['Gamma'][j, r]
+                                    for r in range(len(self.variables['routes'][j]))
+                                    if u in self.variables['routes'][j][r]["nodes"]
+                                ) * self.variables['M'],
+                                name=f"separation_{i}_{j}_{u}_{v}"
+                            )
 
-                        # Equation (24): Ensure aircraft j and i do not collide on edge (v, u)
-                        self.model.addConstr(
-                            self.variables['t'][i, u] - self.variables['t'][j, v]
-                            >= self.variables['Sep'] - self.variables['M'] * (
-                                1 - quicksum(
-                                    self.variables['Gamma'][i, r] * self.variables['Gamma'][j, r]
-                                    for r in self.variables['routes']
-                                    if (v, u) in self.variables['edges'][r]
+        for i in self.variables['aircraft']:
+            for j in self.variables['aircraft']:
+                if i != j:
+                    for r in range(len(self.variables['routes'][j])):
+                        for (w, v) in self.variables['routes'][j][r]["edges"]:  # Iterate over edges for j
+                            # Equation (24): Ensure aircraft i and j do not collide on edge (w, v)
+                            self.model.addConstr(
+                                self.variables['t'][i, v] - self.variables['t'][j, v]
+                                - (self.variables['Sep'] / self.variables['length'][w, v]) * (self.variables['t'][j, v] - self.variables['t'][j, w])
+                                >= -3 + self.variables['Z'][j, i, v]
+                                + quicksum(
+                                    self.variables['Gamma'][j, r]
+                                    for r in range(len(self.variables['routes'][j]))
+                                    if (w, v) in self.variables['routes'][j][r]["edges"]
                                 )
-                            ),
-                            name=f"separation_reverse_{i}_{j}_{u}_{v}"
-                        )
+                                + quicksum(
+                                    self.variables['Gamma'][i, r]
+                                    for r in range(len(self.variables['routes'][i]))
+                                    if v in self.variables['routes'][i][r]["nodes"]
+                                ) * self.variables['M'],
+                                name=f"separation_reverse_{i}_{j}_{w}_{v}"
+                            )
+
 
 class RunwayOccupancy(Constraints):
     def add_constraints(self):
@@ -289,6 +339,3 @@ class Capacity(Constraints):
                             self.variables['t'][i, l] <= self.variables['T_l'][i, j, l],
                             name=f"capacity_{i}_{j}_{l}"
                         )
-
-
-

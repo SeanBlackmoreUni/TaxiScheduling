@@ -32,6 +32,8 @@ class TaxiSchedulingModel():
         graph_data = variables['graph_data']
         route_data = variables['route_data']
 
+        M = 1e6
+
         # Decision Variables
         decision_variables = {
             # Binary variable Z_{iju} indicating sequencing of aircraft i and j at node u
@@ -67,6 +69,7 @@ class TaxiSchedulingModel():
         }
 
         self.variables = aircraft_data | graph_data | route_data | decision_variables
+        self.variables['M'] = M
 
 
     def constraints_setup(self):
@@ -80,7 +83,8 @@ class TaxiSchedulingModel():
             Release,
             Speed,
             Separation,
-            RunwayOccupancy
+            # RunwayOccupancy
+            # Capacity
         ]
 
         for constraint_class in constraint_classes:
@@ -114,14 +118,17 @@ class TaxiSchedulingModel():
         """
         if self.model.Status == GRB.OPTIMAL:
             print("Optimization was successful!")
+            print(f"####   The model finished with objective value: {self.model.ObjVal}")
         elif self.model.Status == GRB.INFEASIBLE:
             print("Model is infeasible.")
+            self.model.computeIIS()  # Compute the Irreducible Inconsistent Subsystem
+            # self.model.write("infeasible_model.ilp")  # Write the IIS to a file for debugging
+            # print("IIS written to infeasible_model.ilp")
         elif self.model.Status == GRB.UNBOUNDED:
             print("Model is unbounded.")
         else:
             print(f"Optimization ended with status {self.model.Status}")
-        
-        print(f"####   The model finished with objective value: {self.model.ObjVal}")
+
 
 
 

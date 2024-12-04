@@ -1,0 +1,36 @@
+\ Model _copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+Minimize
+ 
+Subject To
+ route_selection_3: Gamma[3,0] + Gamma[3,1] = 1
+ speed_linear_min_2_3_5: - 1e+06 Gamma[2,0] - t[2,3] + t[2,5] >= -999956
+ separation_1_3_3_5: - Z[1,3,3] - Gamma[1,0] - Gamma[1,1]
+   - 1e+06 Gamma[3,0] - 1e+06 Gamma[3,1] - 0.9772727272727273 t[1,3]
+   - 0.0227272727272727 t[1,5] + t[3,3] >= -3
+ separation_2_1_3_5: - Z[2,1,3] - 1e+06 Gamma[1,0] - 1e+06 Gamma[1,1]
+   - Gamma[2,0] + t[1,3] - 0.9772727272727273 t[2,3]
+   - 0.0227272727272727 t[2,5] >= -3
+ separation_3_2_3_4: - Z[3,2,3] - 1e+06 Gamma[2,0] - Gamma[3,0] + t[2,3]
+   - 0.975 t[3,3] - 0.025 t[3,4] >= -3
+ separation_reverse_1_3_4_5: - Z[3,1,5] - 1e+06 Gamma[1,0]
+   - 1e+06 Gamma[1,1] - Gamma[3,0] + t[1,5] + 0.02 t[3,4] - 1.02 t[3,5]
+   >= -3
+ separation_reverse_2_1_3_5: - Z[1,2,5] - Gamma[1,0] - Gamma[1,1]
+   - 1e+06 Gamma[2,0] + 0.0227272727272727 t[1,3]
+   - 1.022727272727273 t[1,5] + t[2,5] >= -3
+ separation_reverse_3_2_3_5: - Z[2,3,5] - Gamma[2,0] - 1e+06 Gamma[3,0]
+   - 1e+06 Gamma[3,1] + 0.0227272727272727 t[2,3]
+   - 1.022727272727273 t[2,5] + t[3,5] >= -3
+Bounds
+ t[1,3] free
+ t[1,5] free
+ t[2,3] free
+ t[2,5] free
+ t[3,3] free
+ t[3,4] free
+ t[3,5] free
+Binaries
+ Z[1,2,5] Z[1,3,3] Z[2,1,3] Z[2,3,5] Z[3,1,5] Z[3,2,3] Gamma[1,0]
+ Gamma[1,1] Gamma[2,0] Gamma[3,0] Gamma[3,1]
+End

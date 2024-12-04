@@ -119,6 +119,70 @@ class Dusseldorf(BaseScenario):
     """
     def __init__(self, name):
         super().__init__(name)
+
+    def find_paths(self, graph_data, start, end, path=[]):
+        """
+        Recursively find all paths from start node to end node in a graph.
+        Args:
+            graph_data (dict): Dictionary containing graph information (nodes and edges).
+            start (int): Starting node.
+            end (int): Target node.
+            path (list): Current path (used in recursion).
+        Returns:
+            list: List of all paths from start to end.
+        """
+        path = path + [start]
+        if start == end:
+            return [path]
+        if start not in graph_data["nodes"]:
+            return []
+        paths = []
+        for edge in graph_data["edges"]:
+            if edge[0] == start and edge[1] not in path:
+                new_paths = self.find_paths(graph_data, edge[1], end, path)
+                for new_path in new_paths:
+                    paths.append(new_path)
+            elif edge[1] == start and edge[0] not in path:
+                new_paths = self.find_paths(graph_data, edge[0], end, path)
+                for new_path in new_paths:
+                    paths.append(new_path)
+        return paths
+
+
+    def generate_route_data(self, aircraft_data, graph_data):
+        """
+        Generate route data for aircraft dynamically using provided graph_data.
+        Args:
+            aircraft_data (dict): Dictionary containing aircraft-related data.
+            graph_data (dict): Dictionary containing graph structure (nodes, edges).
+        Returns:
+            dict: Generated route data including routes and unique edges for each aircraft.
+        """
+        route_data = {
+            "routes": {},
+            "all_edges_per_aircraft": {}
+        }
+
+        for aircraft in aircraft_data["aircraft"]:
+            origin = aircraft_data["origin"][aircraft]
+            destination = aircraft_data["destination"][aircraft]
+
+            # Find all possible paths from origin to destination
+            paths = self.find_paths(graph_data, origin, destination)
+            routes = []
+            all_edges = []
+
+            # Convert paths into routes with edges
+            for path in paths:
+                edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
+                routes.append({"nodes": path, "edges": edges})
+                all_edges.extend(edges)
+
+            # Add routes and unique edges for the aircraft
+            route_data["routes"][aircraft] = routes
+            route_data["all_edges_per_aircraft"][aircraft] = list(dict.fromkeys(all_edges))
+
+        return route_data
     
     def get_parameters(self):
         """ Gets the parameters. """
@@ -171,29 +235,7 @@ class Dusseldorf(BaseScenario):
             "runway_edges": [],
             "Sep": "X"}
 
-        route_data = {
-            # All routes for each aircraft (R_i)
-            "routes": {
-                1: [  # Routes for aircraft 1
-                    {"nodes": [1, 2, 3, 5], "edges": [(1, 2), (2, 3), (3, 5)]}, # First route
-                    {"nodes": [1, 4, 3, 5], "edges": [(1, 4), (4, 3), (3, 5)]}, # Second route
-                ],
-                2: [  # Routes for aircraft 2
-                    {"nodes": [2, 3, 5], "edges": [(2, 3), (3, 5)]},            # First route
-                ],
-                3: [  # Routes for aircraft 3
-                    {"nodes": [3, 4, 5], "edges": [(3, 4), (4, 5)]},            # First route
-                    {"nodes": [3, 2, 5], "edges": [(3, 2), (2, 5)]},            # Second route
-                ],
-            },
-
-            # Ordered edges  across all routes for each aircraft
-            "all_edges_per_aircraft": {
-                1: [(1, 2), (2, 3), (3, 5), (1, 4), (4, 3)],                    # All edges across all routes for aircraft 1
-                2: [(2, 3), (3, 5)],                                            # All edges across all routes for aircraft 2
-                3: [(3, 4), (4, 5), (3, 2), (2, 5)],                            # All edges across all routes for aircraft 3
-            },
-        }
+        route_data = self.generate_route_data(aircraft_data, graph_data)
 
 
         return {
@@ -206,8 +248,13 @@ class Dusseldorf(BaseScenario):
 
 def get_scenario(name):
     scenarios = {
-        "scenario_1": Scenario1("scenario_1")
+        "scenario_1": Scenario1("scenario_1"),
+        "scenario_2": Dusseldorf("scenario_2")
     }
     if name not in scenarios:
         return None
-    return scenarios[name].get_parameters()       
+    return scenarios[name].get_parameters() 
+
+# scenario = get_scenario('scenario_2') 
+# print(scenario["route_data"])    
+

@@ -133,7 +133,7 @@ class TaxiSchedulingModel():
 
 
 if __name__ == "__main__":
-    scenario = "scenario_1"            
+    scenario = "scenario_2"            
     model = TaxiSchedulingModel(scenario)
     model.scenario_setup()
     model.constraints_setup()

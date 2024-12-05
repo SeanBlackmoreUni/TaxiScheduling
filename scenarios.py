@@ -8,6 +8,70 @@ The user can opt for:
     1) Arbitrary scenario to test the model functionality.
 """
 
+def find_paths(graph_data, start, end, path=[]):
+        """
+        Recursively find all paths from start node to end node in a graph.
+        Args:
+            graph_data (dict): Dictionary containing graph information (nodes and edges).
+            start (int): Starting node.
+            end (int): Target node.
+            path (list): Current path (used in recursion).
+        Returns:
+            list: List of all paths from start to end.
+        """
+        path = path + [start]
+        if start == end:
+            return [path]
+        if start not in graph_data["nodes"]:
+            return []
+        paths = []
+        for edge in graph_data["edges"]:
+            if edge[0] == start and edge[1] not in path:
+                new_paths = find_paths(graph_data, edge[1], end, path)
+                for new_path in new_paths:
+                    paths.append(new_path)
+            elif edge[1] == start and edge[0] not in path:
+                new_paths = find_paths(graph_data, edge[0], end, path)
+                for new_path in new_paths:
+                    paths.append(new_path)
+        return paths
+
+
+def generate_route_data(aircraft_data, graph_data):
+    """
+    Generate route data for aircraft dynamically using provided graph_data.
+    Args:
+        aircraft_data (dict): Dictionary containing aircraft-related data.
+        graph_data (dict): Dictionary containing graph structure (nodes, edges).
+    Returns:
+        dict: Generated route data including routes and unique edges for each aircraft.
+    """
+    route_data = {
+        "routes": {},
+        "all_edges_per_aircraft": {}
+    }
+
+    for aircraft in aircraft_data["aircraft"]:
+        origin = aircraft_data["origin"][aircraft]
+        destination = aircraft_data["destination"][aircraft]
+
+        # Find all possible paths from origin to destination
+        paths = find_paths(graph_data, origin, destination)
+        routes = []
+        all_edges = []
+
+        # Convert paths into routes with edges
+        for path in paths:
+            edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
+            routes.append({"nodes": path, "edges": edges})
+            all_edges.extend(edges)
+
+        # Add routes and unique edges for the aircraft
+        route_data["routes"][aircraft] = routes
+        route_data["all_edges_per_aircraft"][aircraft] = list(dict.fromkeys(all_edges))
+
+    return route_data
+
 
 class BaseScenario:
     """
@@ -49,16 +113,6 @@ class Scenario1(BaseScenario):
             "ETD": {3: 30},                     # Estimated touchdown time (ETDi) for arrivals
             "Vi_j": {(1, 2): 30, (2, 1): 30},   # Minimum time separation (Vij) between aircraft i and j
         }
-
-        # graph_data = {
-        #     "nodes": [1, 2, 3, 4, 5],                                           # Nodes in the airport graph
-        #     "edges": [(1, 2), (2, 3), (3, 4), (4, 5)],                          # Directed edges in the airport graph
-        #     "length": {(1, 2): 100, (2, 3): 150, (3, 4): 200, (4, 5): 250},     # Length of each edge (luv)
-        #     "Smax": {(1, 2): 15, (2, 3): 15, (3, 4): 15, (4, 5): 15},           # Maximum velocity (Smax) for each edge
-        #     "Smin": {(1, 2): 5, (2, 3): 5, (3, 4): 5, (4, 5): 5},               # Minimum velocity (Smin) for each edge
-        #     "runway_edges": [(4, 5)],                                           # Runway edges
-        #     "Sep": 5,                                                           # Minimum spatial separation (Sep) on taxiways
-        # 
 
         graph_data = {
             "nodes": [1, 2, 3, 4, 5],                                                       # Nodes in the airport graph
@@ -106,12 +160,12 @@ class Scenario1(BaseScenario):
             },
         }
 
-
         return {
             "aircraft_data": aircraft_data,
             "graph_data": graph_data,
             "route_data": route_data
         }
+
 
 class Dusseldorf(BaseScenario):
     """ 
@@ -119,83 +173,41 @@ class Dusseldorf(BaseScenario):
     """
     def __init__(self, name):
         super().__init__(name)
-
-    def find_paths(self, graph_data, start, end, path=[]):
-        """
-        Recursively find all paths from start node to end node in a graph.
-        Args:
-            graph_data (dict): Dictionary containing graph information (nodes and edges).
-            start (int): Starting node.
-            end (int): Target node.
-            path (list): Current path (used in recursion).
-        Returns:
-            list: List of all paths from start to end.
-        """
-        path = path + [start]
-        if start == end:
-            return [path]
-        if start not in graph_data["nodes"]:
-            return []
-        paths = []
-        for edge in graph_data["edges"]:
-            if edge[0] == start and edge[1] not in path:
-                new_paths = self.find_paths(graph_data, edge[1], end, path)
-                for new_path in new_paths:
-                    paths.append(new_path)
-            elif edge[1] == start and edge[0] not in path:
-                new_paths = self.find_paths(graph_data, edge[0], end, path)
-                for new_path in new_paths:
-                    paths.append(new_path)
-        return paths
-
-
-    def generate_route_data(self, aircraft_data, graph_data):
-        """
-        Generate route data for aircraft dynamically using provided graph_data.
-        Args:
-            aircraft_data (dict): Dictionary containing aircraft-related data.
-            graph_data (dict): Dictionary containing graph structure (nodes, edges).
-        Returns:
-            dict: Generated route data including routes and unique edges for each aircraft.
-        """
-        route_data = {
-            "routes": {},
-            "all_edges_per_aircraft": {}
-        }
-
-        for aircraft in aircraft_data["aircraft"]:
-            origin = aircraft_data["origin"][aircraft]
-            destination = aircraft_data["destination"][aircraft]
-
-            # Find all possible paths from origin to destination
-            paths = self.find_paths(graph_data, origin, destination)
-            routes = []
-            all_edges = []
-
-            # Convert paths into routes with edges
-            for path in paths:
-                edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
-                routes.append({"nodes": path, "edges": edges})
-                all_edges.extend(edges)
-
-            # Add routes and unique edges for the aircraft
-            route_data["routes"][aircraft] = routes
-            route_data["all_edges_per_aircraft"][aircraft] = list(dict.fromkeys(all_edges))
-
-        return route_data
     
     def get_parameters(self):
         """ Gets the parameters. """
 
         aircraft_data = {
-            "aircraft": [1, 2, 3],              # Set of all aircraft (P)
-            "departures": [1, 2],               # Set of departure aircraft (D)
-            "arrivals": [3],                    # Set of arrival aircraft (A)
-            "origin": {1: 1, 2: 2, 3: 3},       # Origin node (oi) for each aircraft
-            "destination": {1: 5, 2: 5, 3: 5},  # Destination node (di) for each aircraft
-            "PBT": {1: 10, 2: 15},              # Push-back time (PBTi) for departures
-            "ETD": {3: 30},                     # Estimated touchdown time (ETDi) for arrivals
-            "Vi_j": {(1, 2): 30, (2, 1): 30},   # Minimum time separation (Vij) between aircraft i and j
+            "aircraft": [1, 2, 3, 4, 5, 6, 7],                  # Set of all aircraft (P)
+            "departures": [1, 2, 3, 4],                               # Set of departure aircraft (D)
+            "arrivals": [5, 6, 7],                                    # Set of arrival aircraft (A)
+            "origin": {
+                1: 24, 
+                2: 25, 
+                3: 26, 
+                4: 27, 
+                5: 3, 
+                6: 4, 
+                7: 3},                       # Origin node (oi) for each aircraft
+            "destination": {
+                1: 5, 
+                2: 6, 
+                3: 6, 
+                4: 5, 
+                5: 28, 
+                6: 29, 
+                7: 30},                  # Destination node (di) for each aircraft
+            "PBT": {
+                1: 10,  
+                2: 15, 
+                3: 20,  
+                4: 25},  
+            "ETD": {
+                5: 30,
+                6: 40,
+                7: 50
+            },                                     # Estimated touchdown time (ETDi) for arrivals
+            "Vi_j": {},                   # Minimum time separation (Vij) between aircraft i and j
         }
 
         graph_data = {
@@ -235,15 +247,13 @@ class Dusseldorf(BaseScenario):
             "runway_edges": [],
             "Sep": "X"}
 
-        route_data = self.generate_route_data(aircraft_data, graph_data)
-
+        route_data = generate_route_data(aircraft_data, graph_data)
 
         return {
             "aircraft_data": aircraft_data,
             "graph_data": graph_data,
             "route_data": route_data
         }
-
 
 
 def get_scenario(name):
@@ -255,6 +265,6 @@ def get_scenario(name):
         return None
     return scenarios[name].get_parameters() 
 
-# scenario = get_scenario('scenario_2') 
-# print(scenario["route_data"])    
 
+scenario = get_scenario('scenario_2') 
+print(scenario["route_data"])    

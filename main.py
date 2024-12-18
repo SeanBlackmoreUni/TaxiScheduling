@@ -32,7 +32,7 @@ class TaxiSchedulingModel():
         graph_data = variables['graph_data']
         route_data = variables['route_data']
 
-        M = 1e6
+        M = 1e17
 
         # Decision Variables
         decision_variables = {
@@ -41,7 +41,7 @@ class TaxiSchedulingModel():
                 [(i, j, u) for i in aircraft_data["aircraft"]
                         for j in aircraft_data["aircraft"]
                         if i != j
-                        for u in graph_data["nodes"]],
+                        for u in route_data["all_nodes_per_aircraft"][i]],
                 vtype=GRB.BINARY, name="Z"
             ),
 
@@ -63,7 +63,7 @@ class TaxiSchedulingModel():
             # Continuous variable t_{iu} indicating time aircraft i arrives at node u
             "t": self.model.addVars(
                 [(i, u) for i in aircraft_data["aircraft"]
-                        for u in graph_data["nodes"]],
+                        for u in route_data["all_nodes_per_aircraft"][i]],
                 vtype=GRB.CONTINUOUS, name="t"
             ),
         }
@@ -77,13 +77,13 @@ class TaxiSchedulingModel():
         Sets up the constraints for the model. 
         """
         constraint_classes = [
-            Domain,
+            # Domain,
             Sequencing,
             Overtaking,
             Release,
             Speed,
             Separation,
-            # RunwayOccupancy
+            RunwayOccupancy
             # Capacity
         ]
 
@@ -96,7 +96,10 @@ class TaxiSchedulingModel():
         """ 
         Optimizes the model in the two steps specified by the report. 
         """
-        # We will first solve objective function 1).
+        # Print some stuff
+        print(f"Routes: {self.variables['routes']}")
+
+        #We will first solve objective function 1).
         self.model.setObjective(
             quicksum(self.variables["t"][i, self.variables["destination"][i]] for i in self.variables["aircraft"]),
             GRB.MINIMIZE
@@ -119,17 +122,17 @@ class TaxiSchedulingModel():
         if self.model.Status == GRB.OPTIMAL:
             print("Optimization was successful!")
             print(f"####   The model finished with objective value: {self.model.ObjVal}")
+            self.model.write("solution.sol")
+            print("Solution written to solution.sol")
         elif self.model.Status == GRB.INFEASIBLE:
-            print("Model is infeasible.")
+            print("Model is infeasible")
             self.model.computeIIS()  # Compute the Irreducible Inconsistent Subsystem
-            # self.model.write("infeasible_model.ilp")  # Write the IIS to a file for debugging
-            # print("IIS written to infeasible_model.ilp")
+            self.model.write("infeasible_model.ilp")  # Write the IIS to a file for debugging
+            print("IIS written to infeasible_model.ilp")
         elif self.model.Status == GRB.UNBOUNDED:
             print("Model is unbounded.")
         else:
             print(f"Optimization ended with status {self.model.Status}")
-
-
 
 
 if __name__ == "__main__":

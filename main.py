@@ -41,7 +41,11 @@ class TaxiSchedulingModel():
                 [(i, j, u) for i in aircraft_data["aircraft"]
                         for j in aircraft_data["aircraft"]
                         if i != j
-                        for u in route_data["all_nodes_per_aircraft"][i]],
+                        for u in [
+                        item 
+                        for item in route_data['all_nodes_per_aircraft'][i]
+                        if item in route_data['all_nodes_per_aircraft'][j]]
+                    ],
                 vtype=GRB.BINARY, name="Z"
             ),
 
@@ -77,7 +81,7 @@ class TaxiSchedulingModel():
         Sets up the constraints for the model. 
         """
         constraint_classes = [
-            # Domain,
+            Domain,
             Sequencing,
             Overtaking,
             Release,

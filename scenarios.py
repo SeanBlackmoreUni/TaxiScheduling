@@ -198,11 +198,11 @@ class Dusseldorf(BaseScenario):
                 # 6: 4, 
                 # 7: 3},                       # Origin node (oi) for each aircraft
             "destination": {
-                1: 28, 
+                1: 11, 
                 # 2: 6, 
                 # 3: 7, 
                 # 4: 8, 
-                5: 48}, 
+                5: 41}, 
                 # 6: 29, 
                 # 7: 30},                  # Destination node (di) for each aircraft
             "PBT": {
@@ -299,4 +299,4 @@ def get_scenario(name):
 
 
 scenario = get_scenario('scenario_2') 
-print(scenario["route_data"]['all_edges_per_aircraft'][1])    
+print(scenario["route_data"]['routes'][1])    

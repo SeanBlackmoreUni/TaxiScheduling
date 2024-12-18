@@ -25,53 +25,55 @@ class Constraints:
 
 class Domain(Constraints):
     def add_constraints(self):
-        # Equation (1): Z_{iju} is binary
-        for i in self.variables['aircraft']:
-            for j in self.variables['aircraft']:
-                for u in self.variables['all_nodes_per_aircraft'][i]:
-                    # print(f"YEEEEEEE: {u}")
-                    if i != j:
-                        self.model.addConstr(
-                            self.variables['Z'][i, j, u] >= 0,
-                            name=f"Z_binary_lower_{i}_{j}_{u}"
-                        )
-                        self.model.addConstr(
-                            self.variables['Z'][i, j, u] <= 1,
-                            name=f"Z_binary_upper_{i}_{j}_{u}"
-                        )
+        # I commented out 1-4 as they are already included in the creation of decision variables
 
-        # Equation (2): Gamma_{ir} is binary
-        for i in self.variables['aircraft']:
-            for r in range(len(self.variables['routes'][i])):
-                self.model.addConstr(
-                    self.variables['Gamma'][i, r] >= 0,
-                    name=f"Gamma_binary_lower_{i}_{r}"
-                )
-                self.model.addConstr(
-                    self.variables['Gamma'][i, r] <= 1,
-                    name=f"Gamma_binary_upper_{i}_{r}"
-                )
+        # # Equation (1): Z_{iju} is binary
+        # for i in self.variables['aircraft']:
+        #     for j in self.variables['aircraft']:
+        #         for u in self.variables['all_nodes_per_aircraft'][i]:
+        #             # print(f"YEEEEEEE: {u}")
+        #             if i != j:
+        #                 self.model.addConstr(
+        #                     self.variables['Z'][i, j, u] >= 0,
+        #                     name=f"Z_binary_lower_{i}_{j}_{u}"
+        #                 )
+        #                 self.model.addConstr(
+        #                     self.variables['Z'][i, j, u] <= 1,
+        #                     name=f"Z_binary_upper_{i}_{j}_{u}"
+        #                 )
 
-        # Equation (3): rho_{ij} is binary
-        for i in self.variables['aircraft']:
-            for j in self.variables['aircraft']:
-                if i != j:
-                    self.model.addConstr(
-                        self.variables['rho'][i, j] >= 0,
-                        name=f"rho_binary_lower_{i}_{j}"
-                    )
-                    self.model.addConstr(
-                        self.variables['rho'][i, j] <= 1,
-                        name=f"rho_binary_upper_{i}_{j}"
-                    )
+        # # Equation (2): Gamma_{ir} is binary
+        # for i in self.variables['aircraft']:
+        #     for r in range(len(self.variables['routes'][i])):
+        #         self.model.addConstr(
+        #             self.variables['Gamma'][i, r] >= 0,
+        #             name=f"Gamma_binary_lower_{i}_{r}"
+        #         )
+        #         self.model.addConstr(
+        #             self.variables['Gamma'][i, r] <= 1,
+        #             name=f"Gamma_binary_upper_{i}_{r}"
+        #         )
 
-        # Equation (4): t_{iu} is non-negative
-        for i in self.variables['aircraft']:
-            for u in self.variables['nodes']:
-                self.model.addConstr(
-                    self.variables['t'][i, u] >= 0,
-                    name=f"t_nonnegative_{i}_{u}"
-                )
+        # # Equation (3): rho_{ij} is binary
+        # for i in self.variables['aircraft']:
+        #     for j in self.variables['aircraft']:
+        #         if i != j:
+        #             self.model.addConstr(
+        #                 self.variables['rho'][i, j] >= 0,
+        #                 name=f"rho_binary_lower_{i}_{j}"
+        #             )
+        #             self.model.addConstr(
+        #                 self.variables['rho'][i, j] <= 1,
+        #                 name=f"rho_binary_upper_{i}_{j}"
+        #             )
+
+        # # Equation (4): t_{iu} is non-negative
+        # for i in self.variables['aircraft']:
+        #     for u in self.variables['nodes']:
+        #         self.model.addConstr(
+        #             self.variables['t'][i, u] >= 0,
+        #             name=f"t_nonnegative_{i}_{u}"
+        #         )
 
         # Equation (6): Each aircraft selects one route
         for i in self.variables['aircraft']:
@@ -84,11 +86,13 @@ class Domain(Constraints):
         for i in self.variables['aircraft']:
             for j in self.variables['aircraft']:
                 if i != j:
+                    print(f"IIIIIIIII: {i}")
                     for u in [
                         item 
                         for item in self.variables['all_nodes_per_aircraft'][i]
                         if item in self.variables['all_nodes_per_aircraft'][j]
                     ]: 
+                        print(f"UUUUUUUUUUU: {u}")
                         self.model.addConstr(
                             self.variables['Z'][i, j, u] <= quicksum(
                                 self.variables['Gamma'][i, r]
@@ -236,6 +240,7 @@ class Speed(Constraints):
         # Constraints (19) and (20): Linearized speed limits
         for i in self.variables['aircraft']:
             for (u, v) in self.variables['all_edges_per_aircraft'][i]:
+                # print(f'UUUUVVVV: {u, v}')
                 x, y = (min(u, v), max(u, v))           # Only serves to properly look up the lengths, speeds etc.
 
                 # Maximum speed constraint
@@ -382,12 +387,13 @@ class RunwayOccupancy(Constraints):
                         -(1 - self.variables['rho'][i, j]) * self.variables['M'],
                         name=f"runway_linearization_{i}_{j}_lower"
                     )
+
         # Runway occupancy constraints 31, 32
-        for i in self.variables['aircraft']:
-            for j in self.variables['aircraft']:
+        for i in self.variables['departures']:
+            for j in self.variables['arrivals']:
                 for b in self.variables['runway_entry_nodes']:
                     if i != j:
-                        if b in self.variables['all_nodes_per_aircraft'][i]:
+                        if b in self.variables['all_nodes_per_aircraft'][j]:
                             # Ensure occupancy constraint is respected
                             self.model.addConstr(
                                 self.variables['t'][j, b] - self.variables['t'][i, self.variables['destination'][i]] - self.variables['T']  
@@ -395,13 +401,13 @@ class RunwayOccupancy(Constraints):
                                 name=f"runway_occupancy_upper_{i}_{j}_{b}"
                             )
 
-        for i in self.variables['aircraft']:
-            for j in self.variables['aircraft']:
+        for i in self.variables['departures']:
+            for j in self.variables['arrivals']:
                 for a in self.variables['runway_exit_nodes']:
                     if i != j:
-                        if a in self.variables['all_nodes_per_aircraft'][i]:                
+                        if a in self.variables['all_nodes_per_aircraft'][j]:                
                             self.model.addConstr(
-                                self.variables['t'][i, self.variables['destination'][j]] - self.variables['t'][j, a]
+                                self.variables['t'][i, self.variables['destination'][i]] - self.variables['t'][j, a]
                                 >= - self.variables['M'] * (1 - self.variables['rho'][j, i]),
                                 name=f"runway_occupancy_lower_{i}_{j}_{a}")
 
